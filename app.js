@@ -4,6 +4,9 @@ const app        = express();
 const path       = require('path');
 const db         = require('./db/connection');
 const bodyParser = require('body-parser');
+const Job        = require('./models/Job');
+const Sequelize  = require('sequelize');
+const Op         = Sequelize.Op;
 
 const PORT = 3000;
 
@@ -36,7 +39,35 @@ db
 
 // routes
 app.get('/', (req, res) => {
-    res.render('index');
+
+    let search = req.query.job;
+    let query = '%'+search+'%'; // PH -> PHP, Word -> Wordpress, press -> Wordpress
+
+    if(!search) {
+        Job.findAll({order: [
+            ['createdAt', 'DESC']
+        ]})
+        .then(jobs => {
+
+            res.render('index', {
+                jobs
+            });
+
+        })
+        .catch(err => console.og(err));
+    } else {
+        Job.findAll({
+            where: {title: {[Op.like]: query}},
+            order: [
+            ['createdAt', 'DESC']
+        ]})
+        .then(jobs => {
+
+            res.render('index', {
+                jobs, search
+            });
+        });
+    }
 });
 
 // jobs routes
